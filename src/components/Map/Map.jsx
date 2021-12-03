@@ -1,29 +1,17 @@
-import React, { useState, useEffect,} from "react";
+import React, { useState, useEffect, useRef} from "react";
 import './map.css';
 import ReactMapGL, {Marker, Popup, NavigationControl} from 'react-map-gl'
-import parkData from '../../data/skateboard-parks.json'
-
-
-const MAPBOX_STYLES = {
-	'Dark': 'mapbox://styles/mapbox/dark-v10',
-	'Light': 'mapbox://styles/mapbox/light-v10',
-	'Outdoors': 'mapbox://styles/mapbox/outdoors-v11',
-	'Satellite': 'mapbox://styles/mapbox/satellite-streets-v11',
-	'Streets': 'mapbox://styles/mapbox/streets-v11'
-}
+import turbines from '../../data/wind-turbine.json'
+import turbine from './windTurbine1.png'
+import { MAPBOX_STYLES, DEFAULT_VIEWPORT} from "../../constant/constant";
+import useSupercluster from "use-supercluster";
 
 function Map() {
-  const [viewport, setViewport] = useState({
-    latitude: 45.4211,
-    longitude: -75.6903,
-    width: '100vw',
-    height: '100vh',
-    zoom: 10,
-    
-  })
-  const [selectedPark, setSelectedPark] = useState(null);
-  const [mapStyle, setMapStyle] = useState(MAPBOX_STYLES['Dark'])
+const [viewport, setViewport] = useState({...DEFAULT_VIEWPORT, zoom: 6})
+  const [selectedTurbine, setSelectedTurbine] = useState(null);
+  const [mapStyle, setMapStyle] = useState(MAPBOX_STYLES['Streets'])
   const [mapStyleIcon, showMapStyle] = useState(false)
+  const [showPopup, togglePopup] = useState(false);
 
   // position setting for navigation control
   const navControlStyle= {
@@ -31,12 +19,51 @@ function Map() {
     margin: '1.3rem',
     opacity: 0.85,
   };
+  let newTurbines = turbines.features.slice(500)
+  // console.log(newTurbines)
+
+      // Using useRef() to access the DOM
+      const mapRef = useRef();
+
+      // Create points for the marker cluster
+      const points = newTurbines.map((turbine)=>({
+        type: 'Feature',
+        properties: {
+            cluster: false,
+            turbineId: turbine.id,
+            genMethod: turbine.properties['generator:method'],
+            source: turbine.properties['generator:source'],
+            genOutput: turbine.properties['generator:output:electricity'],
+            genType: turbine.properties['generator:type'],
+            note: turbine.properties['note'],
+            manufacturerType: turbine.properties['manufacturer:type']
+
+        },
+        geometry: {type: 'Point', coordinates: [turbine.geometry.coordinates[0], turbine.geometry.coordinates[1]]}
+    }))
+    // Create the bounds for the marker cluster from the DOM
+    const bounds = mapRef.current
+    ? mapRef.current
+        .getMap()
+        .getBounds()
+        .toArray()
+        .flat()
+    : null;
+
+    // Create the marker cluster
+    const { clusters, supercluster } = useSupercluster({
+        points,
+        bounds,
+        zoom: viewport.zoom,
+        options: { radius: 50, maxZoom: 20 }
+    });
+    // console.log(clusters)
 
   // close the popup when escape key is clicked. useEffect is only called once
   useEffect(()=>{
     const listener = (e)=>{
       if(e.key === 'Escape'){
-        setSelectedPark(null)
+        setSelectedTurbine(null)
       }
     };
     //adding a listener
@@ -80,14 +107,54 @@ function Map() {
   </div>
     
     <ReactMapGL {...viewport}
-    mapStyle= {mapStyle}
-    mapboxApiAccessToken= "pk.eyJ1Ijoib21vYm9sYWppLWtveWkiLCJhIjoiY2txZm50eWUwMHQ1bzJxcGd1ODBxM2d1bSJ9.HTGUO42-AiI6NwJf-oZ5vw"
-    // mapboxApiAccessToken={process.env.REACT_APP_MAPBOX_TOKEN}
-    onViewportChange = {(newViewport) => {
-      return setViewport({...newViewport})
-    }}
+        mapStyle= {mapStyle}
+        maxZoom={20}
+        asyncRender={true}
+        transitionDuration={100} 
+        mapboxApiAccessToken= "pk.eyJ1Ijoib21vYm9sYWppLWtveWkiLCJhIjoiY2txZm50eWUwMHQ1bzJxcGd1ODBxM2d1bSJ9.HTGUO42-AiI6NwJf-oZ5vw"
+        // mapboxApiAccessToken={process.env.REACT_APP_MAPBOX_TOKEN}
+        onViewportChange = {(newViewport) => {
+          return setViewport({...newViewport})
+        }}
+        width='100vw'
+        height='100vh'
+        ref = {mapRef}
     >
-      Marker goes here
+      {clusters.map((data)=>{
+        const [longitude, latitude]= data.geometry.coordinates;
+        const { cluster: isCluster, point_count: pointCount } = data.properties;
+        // console.log(data)
+        
+        //if we are in a cluster we render👇
+        if(isCluster){
+          return <Marker key={data.id} latitude={latitude} longitude={longitude}>
+              <div className='cluster-marker' onClick={()=>{
+                  const expansionZoom = Math.min(supercluster.getClusterExpansionZoom(data.id), 20); // we get the cluster expansion zoom by passing cluster.id as argument and choosing between the number and 20, depending on which one is smaller
+                  setViewport({
+                      ...viewport, 
+                      latitude, 
+                      longitude, 
+                      zoom: expansionZoom,
+                  })
+              }}
+              style={{width: `${10 + (pointCount/points.length) * 30}px`, height: `${10 + (pointCount/points.length) * 30}px`, cursor: 'pointer'}}
+              >{pointCount}</div>
+          </Marker>
+      }
+      // else, if we are not in a cluster we render 👇
+        return(
+          <Marker key={Math.random()} longitude={longitude} latitude={latitude}>
+            <div onClick={()=>{
+              setSelectedTurbine(data.properties)
+              togglePopup(true)
+              console.log(selectedTurbine)
+            }}>
+              <img style={{width:'30px', cursor: 'pointer'}} src={turbine} alt="Wind turbine" />
+            </div>
+          </Marker>
+        )
+
+      })}
       <NavigationControl style={navControlStyle} />
     </ReactMapGL>
   </div>

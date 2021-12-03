@@ -31,13 +31,7 @@ function MarkerCluster(){
     // const [viewport, setViewport] = useState(DEFAULT_VIEWPORT)
     const [mapboxStyle, setMapboxStyle] = useState(MAPBOX_STYLES['Dark'])
 
-    const [viewport, setViewport] = useState({
-        latitude: 52.6373,
-        longitude: -1.135171,
-        width: "100vw",
-        height: "100vh",
-        zoom: 12,
-    })
+    const [viewport, setViewport] = useState(DEFAULT_VIEWPORT)
     // position setting for navigation control
     const navControlStyle= {
         bottom: 10,

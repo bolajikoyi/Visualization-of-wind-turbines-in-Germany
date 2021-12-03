@@ -1,8 +1,8 @@
 export const DEFAULT_VIEWPORT = {
-	// Hamburg
-	latitude: 53.4879,
-	longitude: 10.1819,
-	zoom: 18
+	// Berlin
+	latitude:  50.9740,
+	longitude: 10.5066,
+	zoom: 12
 };
 
 export const MAPBOX_STYLES = {
