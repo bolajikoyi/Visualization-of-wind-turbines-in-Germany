@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef} from "react";
+import React, { useState, useEffect, useRef, useCallback} from "react";
 import './map.css';
 import ReactMapGL, {Marker, Popup, NavigationControl} from 'react-map-gl'
 import turbines from '../../data/wind-turbine.json'
@@ -8,7 +8,10 @@ import useSupercluster from "use-supercluster";
 
 function Map() {
 const [viewport, setViewport] = useState({...DEFAULT_VIEWPORT, zoom: 6})
-  const [selectedTurbine, setSelectedTurbine] = useState(null);
+  const [selectedTurbine, setSelectedTurbine] = useState({
+    properties: null,
+    coordinates: null
+  });
   const [mapStyle, setMapStyle] = useState(MAPBOX_STYLES['Streets'])
   const [mapStyleIcon, showMapStyle] = useState(false)
   const [showPopup, togglePopup] = useState(false);
@@ -19,7 +22,7 @@ const [viewport, setViewport] = useState({...DEFAULT_VIEWPORT, zoom: 6})
     margin: '1.3rem',
     opacity: 0.85,
   };
-  let newTurbines = turbines.features.slice(500)
+  let newTurbines = turbines.features.slice(300)
   // console.log(newTurbines)
 
       // Using useRef() to access the DOM
@@ -63,12 +66,13 @@ const [viewport, setViewport] = useState({...DEFAULT_VIEWPORT, zoom: 6})
   useEffect(()=>{
     const listener = (e)=>{
       if(e.key === 'Escape'){
-        setSelectedTurbine(null)
+        // setSelectedTurbine(null)
+        togglePopup(false)
       }
     };
     //adding a listener
     window.addEventListener('keydown', listener)
-    // removing the listener
+    // removing the listener (Effect cleanup)
     return()=>{
       window.removeEventListener('keydown', listener)
     }
@@ -80,9 +84,7 @@ const [viewport, setViewport] = useState({...DEFAULT_VIEWPORT, zoom: 6})
       Longitude: {viewport.longitude.toFixed(4)}| Latitude: {' '}
       {viewport.latitude.toFixed(4)}| Zoom: {viewport.zoom.toFixed(2)}
     </div>
-  <div className='dashBoard'>
-    <h4>Wind Turbines in Germany</h4>
-  </div>
+  <h4 className="title">Wind Turbines in Germany</h4>
   <div>{!mapStyleIcon? 
   <div className='mapStyle-icon' onClick={()=> showMapStyle(true)}><i className="fas fa-folder-open" style={{fontSize:'24px'}}></i></div>:
   <div className='mapStyle'>
@@ -143,10 +145,14 @@ const [viewport, setViewport] = useState({...DEFAULT_VIEWPORT, zoom: 6})
       }
       // else, if we are not in a cluster we render 👇
         return(
-          <Marker key={Math.random()} longitude={longitude} latitude={latitude}>
+          <Marker key={Math.random()} longitude={longitude} latitude={latitude} draggable>
             <div onClick={()=>{
-              setSelectedTurbine(data.properties)
-              togglePopup(true)
+              setSelectedTurbine({
+                ...selectedTurbine,
+                properties: data.properties,
+                coordinates: [longitude, latitude]
+              })
+              togglePopup((val)=>val=true)
               console.log(selectedTurbine)
             }}>
               <img style={{width:'30px', cursor: 'pointer'}} src={turbine} alt="Wind turbine" />
@@ -155,6 +161,24 @@ const [viewport, setViewport] = useState({...DEFAULT_VIEWPORT, zoom: 6})
         )
 
       })}
+      {showPopup && <Popup 
+                    longitude={selectedTurbine.coordinates[0]} 
+                    latitude={selectedTurbine.coordinates[1]}
+                    closeButton = {true}
+                    closeOnClick={true}
+                    onClose={() => togglePopup(false)}
+                    anchor = "bottom"
+                >
+                    <div className="popup">
+                        <span><b>Longitude</b>: {selectedTurbine.coordinates[0]}</span><br />
+                        <span><b>Latitude</b>: {selectedTurbine.coordinates[1]}</span><br />
+                        <span><b>Manufacturer</b>: {selectedTurbine.properties.manufacturerType??'N/A'}</span><br />
+                        <span><b>Output</b>: {selectedTurbine.properties.genOutput??'N/A'}</span><br />
+                        <span><b>Type</b>: {selectedTurbine.properties.genType??'N/A'}</span>
+                    </div>
+                </Popup>
+                }
+
       <NavigationControl style={navControlStyle} />
     </ReactMapGL>
   </div>

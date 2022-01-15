@@ -50,16 +50,21 @@ button:hover
 .mapStyle button:last-child{
     border-bottom: none;
 }
-.dashBoard{
-    width: 300px;
-    height: 200px;
-    border-radius: 10px;
+
+.title {
     position: absolute;
     margin: 1rem;
-    background-color: white;
-    opacity: 0.85;
     z-index: 1;
     right: 0;
+    font-family: 'Merriweather', serif;
+    /* letter-spacing: 2px; */
+    font-size: 18px;
+    width: 120px;
+    text-align: end;
+    background-color: white;
+    padding: 5px;
+    border-radius: 10px;
+    opacity: 0.85;
 }
 .mapStyle-icon{
     position: absolute;
@@ -81,4 +86,8 @@ button:hover
     display: flex;
     justify-content: center;
     align-items: center;
+}
+.popup {
+    text-align: start;
+    z-index: 3;
 }
