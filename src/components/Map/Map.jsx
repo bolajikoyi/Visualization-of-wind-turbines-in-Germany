@@ -39,8 +39,8 @@ const [viewport, setViewport] = useState({...DEFAULT_VIEWPORT, zoom: 6})
             genOutput: turbine.properties['generator:output:electricity'],
             genType: turbine.properties['generator:type'],
             note: turbine.properties['note'],
-            manufacturerType: turbine.properties['manufacturer:type']
-
+            manufacturer: turbine.properties['manufacturer'],
+            model: turbine.properties['manufacturer:type'],
         },
         geometry: {type: 'Point', coordinates: [turbine.geometry.coordinates[0], turbine.geometry.coordinates[1]]}
     }))
@@ -145,7 +145,7 @@ const [viewport, setViewport] = useState({...DEFAULT_VIEWPORT, zoom: 6})
       }
       // else, if we are not in a cluster we render 👇
         return(
-          <Marker key={Math.random()} longitude={longitude} latitude={latitude} draggable>
+          <Marker key={Math.random()} longitude={longitude} latitude={latitude} draggable={true}>
             <div onClick={()=>{
               setSelectedTurbine({
                 ...selectedTurbine,
@@ -153,7 +153,7 @@ const [viewport, setViewport] = useState({...DEFAULT_VIEWPORT, zoom: 6})
                 coordinates: [longitude, latitude]
               })
               togglePopup((val)=>val=true)
-              console.log(selectedTurbine)
+              // console.log(selectedTurbine)
             }}>
               <img style={{width:'30px', cursor: 'pointer'}} src={turbine} alt="Wind turbine" />
             </div>
@@ -172,7 +172,8 @@ const [viewport, setViewport] = useState({...DEFAULT_VIEWPORT, zoom: 6})
                     <div className="popup">
                         <span><b>Longitude</b>: {selectedTurbine.coordinates[0]}</span><br />
                         <span><b>Latitude</b>: {selectedTurbine.coordinates[1]}</span><br />
-                        <span><b>Manufacturer</b>: {selectedTurbine.properties.manufacturerType??'N/A'}</span><br />
+                        <span><b>Manufacturer</b>: {selectedTurbine.properties.manufacturer??'N/A'}</span><br />
+                        <span><b>Model</b>: {selectedTurbine.properties.model??'N/A'}</span><br />
                         <span><b>Output</b>: {selectedTurbine.properties.genOutput??'N/A'}</span><br />
                         <span><b>Type</b>: {selectedTurbine.properties.genType??'N/A'}</span>
                     </div>
